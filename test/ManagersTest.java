@@ -4,14 +4,14 @@ import static org.junit.jupiter.api.Assertions.*;
 class ManagersTest {
 
     @Test
-    void shouldReturnInitializedTaskManager() {
+    void returnInitialTaskMg() {
         TaskManager taskManager = Managers.getDefault();
         assertNotNull(taskManager, "Менеджер задач не инициализирован");
         assertTrue(taskManager instanceof InMemoryTaskManager, "Должен возвращаться InMemoryTaskManager");
     }
 
     @Test
-    void shouldReturnInitializedHistoryManager() {
+    void returnInitialHistoryMg() {
         HistoryManager historyManager = Managers.getDefaultHistory();
         assertNotNull(historyManager, "Менеджер истории не инициализирован");
         assertTrue(historyManager instanceof InMemoryHistoryManager, "Должен возвращаться InMemoryHistoryManager");
