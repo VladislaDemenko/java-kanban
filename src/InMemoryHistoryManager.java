@@ -1,4 +1,7 @@
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class InMemoryHistoryManager implements HistoryManager {
     private final CustomLinkedList history = new CustomLinkedList();
@@ -8,6 +11,11 @@ public class InMemoryHistoryManager implements HistoryManager {
         if (task != null) {
             history.linkLast(task);
         }
+    }
+
+    @Override
+    public void remove(int id) {
+        history.removeNode(id);
     }
 
     @Override
@@ -22,6 +30,7 @@ public class InMemoryHistoryManager implements HistoryManager {
         private int size = 0;
 
         public void linkLast(Task task) {
+            // Удаляем существующий узел, если задача уже есть в истории
             removeNode(task.getId());
 
             Node<Task> newNode = new Node<>(tail, task, null);
@@ -33,10 +42,6 @@ public class InMemoryHistoryManager implements HistoryManager {
             tail = newNode;
             nodeMap.put(task.getId(), newNode);
             size++;
-
-            if (size > 10) {
-                removeNode(head.data.getId());
-            }
         }
 
         public List<Task> getTasks() {
@@ -49,7 +54,7 @@ public class InMemoryHistoryManager implements HistoryManager {
             return result;
         }
 
-        private void removeNode(int taskId) {
+        public void removeNode(int taskId) {
             Node<Task> node = nodeMap.remove(taskId);
             if (node == null) return;
 
