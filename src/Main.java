@@ -1,4 +1,3 @@
-
 public class Main {
     public static void main(String[] args) {
         TaskManager manager = Managers.getDefault();
@@ -14,10 +13,11 @@ public class Main {
                 "NEW", epic1.getId());
         manager.createSubtask(subtask1);
 
-        // Просматриваем задачи
+        // Просматриваем задачи несколько раз
         manager.getTask(task1.getId());
         manager.getEpic(epic1.getId());
         manager.getSubtask(subtask1.getId());
+        manager.getTask(task1.getId()); // Повторный просмотр
 
         // Печатаем все задачи и историю
         printAllTasks(manager);
@@ -28,6 +28,7 @@ public class Main {
         for (Task task : manager.getTasks()) {
             System.out.println(task);
         }
+
         System.out.println("Эпики:");
         for (Task epic : manager.getEpics()) {
             System.out.println(epic);
