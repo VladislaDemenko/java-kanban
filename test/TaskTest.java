@@ -39,4 +39,28 @@ class TaskTest {
         Subtask subtask = new Subtask(1, "Subtask", "Description", "NEW", 5);
         assertEquals(5, subtask.getEpicId(), "Подзадача должна иметь правильный epicId");
     }
+
+    @Test
+    void testTaskToString() {
+        Task task = new Task(1, "Test Task", "Test Description", "NEW");
+        String expected = "Task{id=1, title='Test Task', description='Test Description', status='NEW'}";
+        assertEquals(expected, task.toString(), "toString не совпадает");
+    }
+
+    @Test
+    void testSubtaskToString() {
+        Subtask subtask = new Subtask(1, "Test Subtask", "Test Description", "NEW", 5);
+        String expected = "Subtask{id=1, title='Test Subtask', description='Test Description', status='NEW', epicId=5}";
+        assertEquals(expected, subtask.toString(), "toString не совпадает");
+    }
+
+    @Test
+    void testEpicToString() {
+        Epic epic = new Epic(1, "Test Epic", "Test Description");
+        epic.addSubtaskId(2);
+        epic.addSubtaskId(3);
+
+        String expected = "Epic{id=1, title='Test Epic', description='Test Description', status='NEW', subtaskIds=[2, 3]}";
+        assertEquals(expected, epic.toString(), "toString не совпадает");
+    }
 }
