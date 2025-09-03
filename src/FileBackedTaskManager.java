@@ -9,6 +9,48 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         this.file = file;
     }
 
+    public static FileBackedTaskManager loadFromFile(File file) {
+        FileBackedTaskManager manager = new FileBackedTaskManager(new InMemoryHistoryManager(), file);
+        try (BufferedReader reader = new BufferedReader(new FileReader(file, StandardCharsets.UTF_8))) {
+            // Пропускаем заголовок
+            reader.readLine();
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
+                Task task = fromString(line);
+                if (task != null) {
+                    if (task instanceof Epic) {
+                        manager.epics.put(task.getId(), (Epic) task);
+                        if (task.getId() >= manager.nextId) {
+                            manager.nextId = task.getId() + 1;
+                        }
+                    } else if (task instanceof Subtask) {
+                        Subtask subtask = (Subtask) task;
+                        manager.subtasks.put(subtask.getId(), subtask);
+                        if (subtask.getId() >= manager.nextId) {
+                            manager.nextId = subtask.getId() + 1;
+                        }
+                        // Добавляем подзадачу в эпик
+                        Epic epic = manager.epics.get(subtask.getEpicId());
+                        if (epic != null) {
+                            epic.addSubtaskId(subtask.getId());
+                        }
+                    } else {
+                        manager.tasks.put(task.getId(), task);
+                        if (task.getId() >= manager.nextId) {
+                            manager.nextId = task.getId() + 1;
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new ManagerSaveException("Ошибка при загрузке из файла", e);
+        }
+        return manager;
+    }
 
 
     private static Task fromString(String value) {
