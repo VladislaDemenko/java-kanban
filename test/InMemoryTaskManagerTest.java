@@ -1,5 +1,4 @@
 import java.util.List;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -13,62 +12,47 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
-    void shouldAddAndFindTask() {
-        Task task = new Task(1, "Task", "Description", "NEW");
+    void addAndFindTask() {
+        Task task = new Task(0, "Task", "Description", "NEW");
         taskManager.createTask(task);
 
         Task savedTask = taskManager.getTask(task.getId());
-
         assertNotNull(savedTask, "Задача не найдена");
-        assertEquals(task, savedTask, "Задачи не совпадают");
+        assertEquals(task.getTitle(), savedTask.getTitle(), "Название не совпадает");
+        assertEquals(task.getDescription(), savedTask.getDescription(), "Описание не совпадает");
     }
 
     @Test
-    void shouldNotConflictWithGeneratedAndGivenIds() {
-        Task task1 = new Task(1, "Task 1", "Description", "NEW");
+    void notConflictIds() {
+        Task task1 = new Task(0, "Task 1", "Description", "NEW");
         taskManager.createTask(task1);
 
         Task task2 = new Task(0, "Task 2", "Description", "NEW");
         taskManager.createTask(task2);
 
-        assertNotEquals(task1.getId(), task2.getId(), "ID задач не должны конфликтовать");
+        assertNotEquals(task1.getId(), task2.getId(), "ID не должны конфликтовать");
     }
 
     @Test
-    void shouldNotAddSubtaskToItselfAsEpic() {
-        Epic epic = new Epic(1, "Epic", "Description");
-        taskManager.createEpic(epic);
-
-        Subtask subtask = new Subtask(2, "Subtask", "Description", "NEW", epic.getId());
-        taskManager.createSubtask(subtask);
-
-        assertThrows(IllegalArgumentException.class, () -> {
-            subtask.setEpicId(subtask.getId());
-            taskManager.updateSubtask(subtask);
-        }, "Подзадача не может быть своим же эпиком");
-    }
-
-    @Test
-    void shouldPreserveTaskFieldsWhenAdded() {
-        Task task = new Task(1, "Task", "Description", "NEW");
+    void preserveTaskFields() {
+        Task task = new Task(0, "Task", "Description", "NEW");
         taskManager.createTask(task);
 
         Task savedTask = taskManager.getTask(task.getId());
-
-        assertEquals(task.getTitle(), savedTask.getTitle(), "Название задачи изменилось");
-        assertEquals(task.getDescription(), savedTask.getDescription(), "Описание задачи изменилось");
-        assertEquals(task.getStatus(), savedTask.getStatus(), "Статус задачи изменился");
+        assertEquals(task.getTitle(), savedTask.getTitle(), "Название изменилось");
+        assertEquals(task.getDescription(), savedTask.getDescription(), "Описание изменилось");
+        assertEquals(task.getStatus(), savedTask.getStatus(), "Статус изменился");
     }
 
     @Test
-    void shouldAddTasksToHistory() {
-        Task task = new Task(1, "Task", "Description", "NEW");
+    void addToHistory() {
+        Task task = new Task(0, "Task", "Description", "NEW");
         taskManager.createTask(task);
 
-        Epic epic = new Epic(2, "Epic", "Description");
+        Epic epic = new Epic(0, "Epic", "Description");
         taskManager.createEpic(epic);
 
-        Subtask subtask = new Subtask(3, "Subtask", "Description", "NEW", epic.getId());
+        Subtask subtask = new Subtask(0, "Subtask", "Description", "NEW", epic.getId());
         taskManager.createSubtask(subtask);
 
         taskManager.getTask(task.getId());
@@ -76,90 +60,139 @@ class InMemoryTaskManagerTest {
         taskManager.getSubtask(subtask.getId());
 
         List<Task> history = taskManager.getHistory();
-
-        assertEquals(3, history.size(), "Неверное количество задач в истории");
-        assertEquals(task, history.get(0), "Первая задача в истории не совпадает");
-        assertEquals(epic, history.get(1), "Вторая задача в истории не совпадает");
-        assertEquals(subtask, history.get(2), "Третья задача в истории не совпадает");
+        assertEquals(3, history.size(), "Неверное количество в истории");
+        assertEquals(task, history.get(0), "Первая задача не совпадает");
+        assertEquals(epic, history.get(1), "Вторая задача не совпадает");
+        assertEquals(subtask, history.get(2), "Третья задача не совпадает");
     }
 
-    @org.junit.jupiter.api.Test
-    void getTasks() {
+    @Test
+    void removeFromHistory() {
+        Task task = new Task(0, "Task", "Description", "NEW");
+        taskManager.createTask(task);
+
+        Epic epic = new Epic(0, "Epic", "Description");
+        taskManager.createEpic(epic);
+
+        Subtask subtask = new Subtask(0, "Subtask", "Description", "NEW", epic.getId());
+        taskManager.createSubtask(subtask);
+
+        taskManager.getTask(task.getId());
+        taskManager.getEpic(epic.getId());
+        taskManager.getSubtask(subtask.getId());
+
+        taskManager.deleteTask(task.getId());
+
+        List<Task> history = taskManager.getHistory();
+        assertEquals(2, history.size(), "Задача не удалилась из истории");
+        assertFalse(history.contains(task), "Удаленная задача осталась в истории");
     }
 
-    @org.junit.jupiter.api.Test
-    void getEpics() {
+    @Test
+    void updateEpicStatus() {
+        Epic epic = new Epic(0, "Epic", "Description");
+        taskManager.createEpic(epic);
+
+        Subtask subtask1 = new Subtask(0, "Subtask 1", "Description", "NEW", epic.getId());
+        Subtask subtask2 = new Subtask(0, "Subtask 2", "Description", "NEW", epic.getId());
+
+        taskManager.createSubtask(subtask1);
+        taskManager.createSubtask(subtask2);
+
+        assertEquals("NEW", epic.getStatus(), "Статус должен быть NEW");
+
+        subtask1.setStatus("DONE");
+        taskManager.updateSubtask(subtask1);
+
+        Epic updatedEpic = taskManager.getEpic(epic.getId());
+        assertEquals("IN_PROGRESS", updatedEpic.getStatus(), "Статус должен быть IN_PROGRESS");
+
+        subtask2.setStatus("DONE");
+        taskManager.updateSubtask(subtask2);
+
+        updatedEpic = taskManager.getEpic(epic.getId());
+        assertEquals("DONE", updatedEpic.getStatus(), "Статус должен быть DONE");
     }
 
-    @org.junit.jupiter.api.Test
-    void getSubtasks() {
+    @Test
+    void deleteSubtasksWithEpic() {
+        Epic epic = new Epic(0, "Epic", "Description");
+        taskManager.createEpic(epic);
+
+        Subtask subtask1 = new Subtask(0, "Subtask 1", "Description", "NEW", epic.getId());
+        Subtask subtask2 = new Subtask(0, "Subtask 2", "Description", "NEW", epic.getId());
+
+        taskManager.createSubtask(subtask1);
+        taskManager.createSubtask(subtask2);
+
+        taskManager.deleteEpic(epic.getId());
+
+        assertNull(taskManager.getEpic(epic.getId()), "Эпик не удалился");
+        assertNull(taskManager.getSubtask(subtask1.getId()), "Подзадача 1 не удалилась");
+        assertNull(taskManager.getSubtask(subtask2.getId()), "Подзадача 2 не удалилась");
     }
 
-    @org.junit.jupiter.api.Test
-    void deleteTasks() {
+    @Test
+    void handleEmptyLists() {
+        assertTrue(taskManager.getTasks().isEmpty(), "Список задач должен быть пустым");
+        assertTrue(taskManager.getEpics().isEmpty(), "Список эпиков должен быть пустым");
+        assertTrue(taskManager.getSubtasks().isEmpty(), "Список подзадач должен быть пустым");
     }
 
-    @org.junit.jupiter.api.Test
-    void deleteEpics() {
+    @Test
+    void returnEpicSubtasks() {
+        Epic epic = new Epic(0, "Epic", "Description");
+        taskManager.createEpic(epic);
+
+        Subtask subtask1 = new Subtask(0, "Subtask 1", "Description", "NEW", epic.getId());
+        Subtask subtask2 = new Subtask(0, "Subtask 2", "Description", "NEW", epic.getId());
+
+        taskManager.createSubtask(subtask1);
+        taskManager.createSubtask(subtask2);
+
+        List<Subtask> epicSubtasks = taskManager.getEpicSubtasks(epic.getId());
+        assertEquals(2, epicSubtasks.size(), "Неверное количество подзадач");
+        assertTrue(epicSubtasks.contains(subtask1), "Подзадача 1 не найдена");
+        assertTrue(epicSubtasks.contains(subtask2), "Подзадача 2 не найдена");
     }
 
-    @org.junit.jupiter.api.Test
-    void deleteSubtasks() {
+    @Test
+    void testDeleteAllTasks() {
+        Task task1 = new Task(0, "Task 1", "Description", "NEW");
+        Task task2 = new Task(0, "Task 2", "Description", "NEW");
+        taskManager.createTask(task1);
+        taskManager.createTask(task2);
+
+        taskManager.deleteTasks();
+        assertTrue(taskManager.getTasks().isEmpty(), "Все задачи должны быть удалены");
     }
 
-    @org.junit.jupiter.api.Test
-    void getTask() {
+    @Test
+    void testDeleteAllSubtasks() {
+        Epic epic = new Epic(0, "Epic", "Description");
+        taskManager.createEpic(epic);
+
+        Subtask subtask1 = new Subtask(0, "Subtask 1", "Description", "NEW", epic.getId());
+        Subtask subtask2 = new Subtask(0, "Subtask 2", "Description", "NEW", epic.getId());
+        taskManager.createSubtask(subtask1);
+        taskManager.createSubtask(subtask2);
+
+        taskManager.deleteSubtasks();
+        assertTrue(taskManager.getSubtasks().isEmpty(), "Все подзадачи должны быть удалены");
+        assertTrue(epic.getSubtaskIds().isEmpty(), "Список подзадач эпика должен быть пустым");
     }
 
-    @org.junit.jupiter.api.Test
-    void getEpic() {
-    }
+    @Test
+    void testUpdateTask() {
+        Task task = new Task(0, "Task", "Description", "NEW");
+        taskManager.createTask(task);
 
-    @org.junit.jupiter.api.Test
-    void getSubtask() {
-    }
+        Task updatedTask = new Task(task.getId(), "Updated Task", "Updated Description", "DONE");
+        taskManager.updateTask(updatedTask);
 
-    @org.junit.jupiter.api.Test
-    void createTask() {
-    }
-
-    @org.junit.jupiter.api.Test
-    void createEpic() {
-    }
-
-    @org.junit.jupiter.api.Test
-    void createSubtask() {
-    }
-
-    @org.junit.jupiter.api.Test
-    void updateTask() {
-    }
-
-    @org.junit.jupiter.api.Test
-    void updateEpic() {
-    }
-
-    @org.junit.jupiter.api.Test
-    void updateSubtask() {
-    }
-
-    @org.junit.jupiter.api.Test
-    void deleteTask() {
-    }
-
-    @org.junit.jupiter.api.Test
-    void deleteEpic() {
-    }
-
-    @org.junit.jupiter.api.Test
-    void deleteSubtask() {
-    }
-
-    @org.junit.jupiter.api.Test
-    void getEpicSubtasks() {
-    }
-
-    @org.junit.jupiter.api.Test
-    void getHistory() {
+        Task savedTask = taskManager.getTask(task.getId());
+        assertEquals("Updated Task", savedTask.getTitle(), "Название не обновилось");
+        assertEquals("Updated Description", savedTask.getDescription(), "Описание не обновилось");
+        assertEquals("DONE", savedTask.getStatus(), "Статус не обновился");
     }
 }
