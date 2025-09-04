@@ -16,7 +16,7 @@ class FileBackedTaskManagerTest {
     }
 
     @Test
-    void saveAndLoadEmptyFile() {
+    void saveLoadFile() {
         // сохранения пустого менеджера
         taskManager.save();
 
@@ -29,7 +29,7 @@ class FileBackedTaskManagerTest {
     }
 
     @Test
-    void saveAndLoadTasks() {
+    void saveLoadTasks() {
         // Создаем задачи
         Task task = new Task(0, "Test Task", "Test Description", "NEW");
         taskManager.createTask(task);
@@ -64,7 +64,7 @@ class FileBackedTaskManagerTest {
     }
 
     @Test
-    void saveAndLoadWithHistory() {
+    void saveWithHistory() {
         // создание задач
         Task task = new Task(0, "Task", "Description", "NEW");
         taskManager.createTask(task);
@@ -85,7 +85,7 @@ class FileBackedTaskManagerTest {
     }
 
     @Test
-    void preserveTaskDataAfterSaveAndLoad() {
+    void TaskDataLoad() {
         Task task = new Task(0, "Original", "Original Desc", "NEW");
         taskManager.createTask(task);
 
@@ -104,7 +104,7 @@ class FileBackedTaskManagerTest {
     }
 
     @Test
-    void handleEpicStatusAfterLoad() {
+    void EpicStatusLoad() {
         Epic epic = new Epic(0, "Epic", "Description");
         taskManager.createEpic(epic);
 
@@ -125,7 +125,7 @@ class FileBackedTaskManagerTest {
     }
 
     @Test
-    void saveAfterEachOperation() {
+    void saveAllOperation() {
         // Проверяем, что файл создается после каждой операции
         Task task = new Task(0, "Task", "Description", "NEW");
         taskManager.createTask(task);
@@ -140,7 +140,7 @@ class FileBackedTaskManagerTest {
     }
 
     @Test
-    void loadFromNonExistentFile() {
+    void loadNExistentFile() {
         File nonExistentFile = new File("non_existent_file.csv");
         assertThrows(ManagerSaveException.class, () -> {
             FileBackedTaskManager.loadFromFile(nonExistentFile);
@@ -148,7 +148,7 @@ class FileBackedTaskManagerTest {
     }
 
     @Test
-    void saveToNonWritableFile() {
+    void saveFile() {
         File readOnlyFile = new File("read_only.csv");
         readOnlyFile.setReadOnly();
 

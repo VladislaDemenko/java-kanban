@@ -53,7 +53,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         return manager;
     }
 
-    private void save() {
+    void save() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file, StandardCharsets.UTF_8))) {
             // Записываем заголовок
             writer.write("id,type,name,status,description,epic");
