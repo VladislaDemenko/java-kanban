@@ -10,6 +10,13 @@ public class Task {
     protected Duration duration;
     protected LocalDateTime startTime;
 
+    public Task(int id, String title, String description, String status) {
+        this.id = id;
+        this.title = title;
+        this.description = description;
+        this.status = status;
+    }
+
     public Task(int id, String title, String description, String status, Duration duration, LocalDateTime startTime) {
         this.id = id;
         this.title = title;
