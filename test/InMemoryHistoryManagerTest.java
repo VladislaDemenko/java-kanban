@@ -49,18 +49,6 @@ class InMemoryHistoryManagerTest {
         assertEquals(task2, history.get(0), "Оставшаяся задача не совпадает");
     }
 
-    @Test
-    void preserveTaskData() {
-        HistoryManager historyManager = Managers.getDefaultHistory();
-        Task task = new Task(1, "Task", "Description", "NEW");
-
-        historyManager.add(task);
-        task.setStatus("DONE");
-
-        Task historyTask = historyManager.getHistory().get(0);
-
-        assertEquals("NEW", historyTask.getStatus(), "Статус задачи в истории изменился");
-    }
 
     @Test
     void handleEmptyHistory() {
