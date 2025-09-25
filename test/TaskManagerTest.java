@@ -65,7 +65,7 @@ public abstract class TaskManagerTest<T extends TaskManager> {
 
         List<Task> history = taskManager.getHistory();
         assertEquals(3, history.size(), "Неверное количество в истории");
-    } 
+    }
 
     @Test
     void removeFromHistory() {
@@ -86,7 +86,7 @@ public abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
-    void updateEpicStatusAllNew() {
+    void updateEpicStatus() {
         Epic epic = new Epic(0, "Epic", "Description");
         taskManager.createEpic(epic);
 
@@ -100,7 +100,7 @@ public abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
-    void updateEpicStatusAllDone() {
+    void updateEpStatusDone() {
         Epic epic = new Epic(0, "Epic", "Description");
         taskManager.createEpic(epic);
 
@@ -114,7 +114,7 @@ public abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
-    void updateEpicStatusMixedNewDone() {
+    void updateEpStatusMixed() {
         Epic epic = new Epic(0, "Epic", "Description");
         taskManager.createEpic(epic);
 
@@ -129,7 +129,7 @@ public abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
-    void updateEpicStatusInProgress() {
+    void updateEpStatusProgress() {
         Epic epic = new Epic(0, "Epic", "Description");
         taskManager.createEpic(epic);
 
@@ -144,7 +144,7 @@ public abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
-    void deleteSubtasksWithEpic() {
+    void delSubtasksWithEp() {
         Epic epic = new Epic(0, "Epic", "Description");
         taskManager.createEpic(epic);
 
@@ -197,7 +197,7 @@ public abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
-    void testDeleteAllSubtasks() {
+    void testDelAllSubtasks() {
         Epic epic = new Epic(0, "Epic", "Description");
         taskManager.createEpic(epic);
 
@@ -238,7 +238,7 @@ public abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
-    void testTasksTimeIntersection() {
+    void TimeIntersection() {
         Task task1 = new Task(0, "Task 1", "Description", "NEW",
                 Duration.ofHours(2), LocalDateTime.of(2024, 1, 15, 10, 0));
         Task task2 = new Task(0, "Task 2", "Description", "NEW",
@@ -252,7 +252,7 @@ public abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
-    void testNoTimeIntersection() {
+    void NoTimeIntersection() {
         Task task1 = new Task(0, "Task 1", "Description", "NEW",
                 Duration.ofHours(1), LocalDateTime.of(2024, 1, 15, 10, 0));
         Task task2 = new Task(0, "Task 2", "Description", "NEW",
@@ -264,7 +264,7 @@ public abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
-    void testGetPrioritizedTasks() {
+    void testPrioritiTasks() {
         Task task1 = new Task(0, "Task 1", "Description", "NEW",
                 Duration.ofHours(1), LocalDateTime.of(2024, 1, 15, 12, 0));
         Task task2 = new Task(0, "Task 2", "Description", "NEW",
@@ -280,7 +280,7 @@ public abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
-    void testTasksWithoutTimeNotInPrioritized() {
+    void testTasksWithoutTime() {
         Task taskWithTime = new Task(0, "Task with time", "Description", "NEW",
                 Duration.ofHours(1), LocalDateTime.of(2024, 1, 15, 10, 0));
         Task taskWithoutTime = new Task(0, "Task without time", "Description", "NEW");
