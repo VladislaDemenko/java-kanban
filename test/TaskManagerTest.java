@@ -65,7 +65,7 @@ public abstract class TaskManagerTest<T extends TaskManager> {
 
         List<Task> history = taskManager.getHistory();
         assertEquals(3, history.size(), "Неверное количество в истории");
-    }
+    } 
 
     @Test
     void removeFromHistory() {
