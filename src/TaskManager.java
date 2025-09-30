@@ -1,6 +1,6 @@
 import java.util.List;
 
-interface TaskManager {
+public interface TaskManager {
     List<Task> getTasks();
     List<Epic> getEpics();
     List<Subtask> getSubtasks();
@@ -21,4 +21,7 @@ interface TaskManager {
     void deleteSubtask(int id);
     List<Subtask> getEpicSubtasks(int epicId);
     List<Task> getHistory();
+    List<Task> getPrioritizedTasks();
+    boolean isTasksIntersect(Task task1, Task task2);
+    boolean hasTimeOverlap(Task task);
 }

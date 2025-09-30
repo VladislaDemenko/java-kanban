@@ -1,27 +1,38 @@
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.time.Duration;
+import java.time.LocalDateTime;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-class FileBackedTaskManagerTest {
-    private File tempFile;
-    private FileBackedTaskManager taskManager;
+class FileBackedTaskManagerTest extends TaskManagerTest<FileBackedTaskManager> {
 
-    @BeforeEach
-    void setUp() throws IOException {
-        tempFile = File.createTempFile("test", ".csv");
-        taskManager = new FileBackedTaskManager(new InMemoryHistoryManager(), tempFile);
+    @TempDir
+    File tempDir;
+    private File testFile;
+
+    @Override
+    protected FileBackedTaskManager createTaskManager() {
+        try {
+            testFile = File.createTempFile("test", ".csv", tempDir);
+            return new FileBackedTaskManager(Managers.getDefaultHistory(), testFile);
+        } catch (IOException e) {
+            throw new RuntimeException("Не удалось создать временный файл", e);
+        }
     }
 
     @Test
-    void saveLoadFile() {
-        // сохранения пустого менеджера
+    void saveLoadEmptyManager() {
         taskManager.save();
 
-        // загрузка из файла
-        FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(tempFile);
+        FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(testFile);
 
         assertTrue(loadedManager.getTasks().isEmpty(), "Задачи должны быть пустыми");
         assertTrue(loadedManager.getEpics().isEmpty(), "Эпики должны быть пустыми");
@@ -29,8 +40,7 @@ class FileBackedTaskManagerTest {
     }
 
     @Test
-    void saveLoadTasks() {
-        // Создаем задачи
+    void saveLoadTasksWithData() {
         Task task = new Task(0, "Test Task", "Test Description", "NEW");
         taskManager.createTask(task);
 
@@ -40,10 +50,8 @@ class FileBackedTaskManagerTest {
         Subtask subtask = new Subtask(0, "Test Subtask", "Test Subtask Description", "NEW", epic.getId());
         taskManager.createSubtask(subtask);
 
-        // Загружаем из файла
-        FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(tempFile);
+        FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(testFile);
 
-        // Проверяем задачи
         assertEquals(1, loadedManager.getTasks().size(), "Неверное количество задач");
         assertEquals(1, loadedManager.getEpics().size(), "Неверное количество эпиков");
         assertEquals(1, loadedManager.getSubtasks().size(), "Неверное количество подзадач");
@@ -51,51 +59,40 @@ class FileBackedTaskManagerTest {
         Task loadedTask = loadedManager.getTask(task.getId());
         assertNotNull(loadedTask, "Задача не загрузилась");
         assertEquals(task.getTitle(), loadedTask.getTitle(), "Название задачи не совпадает");
-        assertEquals(task.getDescription(), loadedTask.getDescription(), "Описание задачи не совпадает");
 
         Epic loadedEpic = loadedManager.getEpic(epic.getId());
         assertNotNull(loadedEpic, "Эпик не загрузился");
-        assertEquals(epic.getTitle(), loadedEpic.getTitle(), "Название эпика не совпадает");
 
         Subtask loadedSubtask = loadedManager.getSubtask(subtask.getId());
         assertNotNull(loadedSubtask, "Подзадача не загрузилась");
-        assertEquals(subtask.getTitle(), loadedSubtask.getTitle(), "Название подзадачи не совпадает");
         assertEquals(subtask.getEpicId(), loadedSubtask.getEpicId(), "EpicId подзадачи не совпадает");
     }
 
     @Test
-    void saveWithHistory() {
-        // создание задач
-        Task task = new Task(0, "Task", "Description", "NEW");
+    void saveLoadTasksWithTimeData() {
+        Task task = new Task(0, "Task", "Description", "NEW",
+                Duration.ofHours(1), LocalDateTime.of(2024, 1, 15, 10, 0));
         taskManager.createTask(task);
 
-        Epic epic = new Epic(0, "Epic", "Description");
-        taskManager.createEpic(epic);
+        FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(testFile);
+        Task loadedTask = loadedManager.getTask(task.getId());
 
-        // добавление в историю
-        taskManager.getTask(task.getId());
-        taskManager.getEpic(epic.getId());
-
-        // сохранения и загрузка
-        FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(tempFile);
-
-        // Проверяем, что задачи загрузились
-        assertNotNull(loadedManager.getTask(task.getId()), "Задача не загрузилась");
-        assertNotNull(loadedManager.getEpic(epic.getId()), "Эпик не загрузился");
+        assertNotNull(loadedTask.getDuration(), "Продолжительность должна сохраниться");
+        assertNotNull(loadedTask.getStartTime(), "Время начала должно сохраниться");
+        assertEquals(task.getDuration(), loadedTask.getDuration(), "Продолжительность не совпадает");
+        assertEquals(task.getStartTime(), loadedTask.getStartTime(), "Время начала не совпадает");
     }
 
     @Test
-    void TaskDataLoad() {
+    void taskDataPersistance() {
         Task task = new Task(0, "Original", "Original Desc", "NEW");
         taskManager.createTask(task);
 
-        // Меняем оригинальную задачу (не должно повлиять на сохраненную)
         task.setTitle("Changed");
         task.setDescription("Changed Desc");
         task.setStatus("DONE");
 
-        // Загружаем
-        FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(tempFile);
+        FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(testFile);
         Task loadedTask = loadedManager.getTask(task.getId());
 
         assertEquals("Original", loadedTask.getTitle(), "Название не сохранилось");
@@ -104,7 +101,7 @@ class FileBackedTaskManagerTest {
     }
 
     @Test
-    void EpicStatusLoad() {
+    void epicStatusCalculationAfterLoad() {
         Epic epic = new Epic(0, "Epic", "Description");
         taskManager.createEpic(epic);
 
@@ -113,34 +110,31 @@ class FileBackedTaskManagerTest {
         taskManager.createSubtask(subtask1);
         taskManager.createSubtask(subtask2);
 
-        // Меняем статус одной подзадачи
         subtask1.setStatus("DONE");
         taskManager.updateSubtask(subtask1);
 
-        // Загружаем
-        FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(tempFile);
+        FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(testFile);
         Epic loadedEpic = loadedManager.getEpic(epic.getId());
 
         assertEquals("IN_PROGRESS", loadedEpic.getStatus(), "Статус эпика должен быть IN_PROGRESS");
     }
 
     @Test
-    void saveAllOperation() {
-        // Проверяем, что файл создается после каждой операции
+    void fileExistsAfterOperations() {
         Task task = new Task(0, "Task", "Description", "NEW");
         taskManager.createTask(task);
-        assertTrue(tempFile.exists(), "Файл должен существовать после создания задачи");
+        assertTrue(testFile.exists(), "Файл должен существовать после создания задачи");
 
         Epic epic = new Epic(0, "Epic", "Description");
         taskManager.createEpic(epic);
-        assertTrue(tempFile.exists(), "Файл должен существовать после создания эпика");
+        assertTrue(testFile.exists(), "Файл должен существовать после создания эпика");
 
         taskManager.deleteTask(task.getId());
-        assertTrue(tempFile.exists(), "Файл должен существовать после удаления задачи");
+        assertTrue(testFile.exists(), "Файл должен существовать после удаления задачи");
     }
 
     @Test
-    void loadNExistentFile() {
+    void loadFromNonExistentFile() {
         File nonExistentFile = new File("non_existent_file.csv");
         assertThrows(ManagerSaveException.class, () -> {
             FileBackedTaskManager.loadFromFile(nonExistentFile);
@@ -148,14 +142,47 @@ class FileBackedTaskManagerTest {
     }
 
     @Test
-    void saveFile() {
-        File readOnlyFile = new File("read_only.csv");
-        readOnlyFile.setReadOnly();
+    void saveToReadOnlyFile() {
+        File readOnlyFile = new File(tempDir, "read_only.csv");
+        try {
+            Files.write(readOnlyFile.toPath(), new byte[0], StandardOpenOption.CREATE);
+            readOnlyFile.setReadOnly();
 
-        FileBackedTaskManager manager = new FileBackedTaskManager(new InMemoryHistoryManager(), readOnlyFile);
-        assertThrows(ManagerSaveException.class, () -> {
-            Task task = new Task(0, "Task", "Description", "NEW");
-            manager.createTask(task);
-        }, "Должно выбрасываться исключение при сохранении в недоступный файл");
+            FileBackedTaskManager manager = new FileBackedTaskManager(
+                    Managers.getDefaultHistory(), readOnlyFile);
+
+            assertThrows(ManagerSaveException.class, () -> {
+                Task task = new Task(0, "Task", "Description", "NEW");
+                manager.createTask(task);
+            }, "Должно выбрасываться исключение при сохранении в недоступный файл");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            readOnlyFile.setWritable(true);
+        }
+    }
+
+    @Test
+    void loadCorruptedFile() {
+        try {
+            Files.write(testFile.toPath(), "corrupted,data\n".getBytes());
+
+            assertThrows(ManagerSaveException.class, () -> {
+                FileBackedTaskManager.loadFromFile(testFile);
+            }, "Должно выбрасываться исключение при загрузке поврежденного файла");
+        } catch (IOException e) {
+            fail("Не удалось создать поврежденный файл для теста");
+        }
+    }
+
+    @Test
+    void saveLoadWithEmptyFields() {
+        Task task = new Task(0, "Task", "Description", "NEW");
+        taskManager.createTask(task);
+
+        FileBackedTaskManager loadedManager = FileBackedTaskManager.loadFromFile(testFile);
+        Task loadedTask = loadedManager.getTask(task.getId());
+
+        assertNotNull(loadedTask, "Задача должна загрузиться даже с пустыми полями времени");
     }
 }

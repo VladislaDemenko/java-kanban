@@ -30,7 +30,6 @@ public class InMemoryHistoryManager implements HistoryManager {
         private int size = 0;
 
         public void linkLast(Task task) {
-            // Удаляем существующий узел, если задача уже есть в истории
             removeNode(task.getId());
 
             Node<Task> newNode = new Node<>(tail, task, null);
