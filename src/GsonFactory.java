@@ -19,21 +19,21 @@ public class GsonFactory {
 
     private static class DurationAdapter extends TypeAdapter<Duration> {
         @Override
-        public void write(JsonWriter out, Duration value) throws IOException {
+        public void write(JsonWriter writer, Duration value) throws IOException {
             if (value == null) {
-                out.nullValue();
+                writer.nullValue();
             } else {
-                out.value(value.toMinutes()); // Сохраняем в минутах
+                writer.value(value.toMinutes()); // Сохраняем в минутах
             }
         }
 
         @Override
-        public Duration read(JsonReader in) throws IOException {
-            if (in.peek() == com.google.gson.stream.JsonToken.NULL) {
-                in.nextNull();
+        public Duration read(JsonReader reader) throws IOException {
+            if (reader.peek() == com.google.gson.stream.JsonToken.NULL) {
+                reader.nextNull();
                 return null;
             }
-            long minutes = in.nextLong();
+            long minutes = reader.nextLong();
             return Duration.ofMinutes(minutes);
         }
     }
@@ -42,21 +42,21 @@ public class GsonFactory {
         private static final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
         @Override
-        public void write(JsonWriter out, LocalDateTime value) throws IOException {
+        public void write(JsonWriter writer, LocalDateTime value) throws IOException {
             if (value == null) {
-                out.nullValue();
+                writer.nullValue();
             } else {
-                out.value(value.format(formatter));
+                writer.value(value.format(formatter));
             }
         }
 
         @Override
-        public LocalDateTime read(JsonReader in) throws IOException {
-            if (in.peek() == com.google.gson.stream.JsonToken.NULL) {
-                in.nextNull();
+        public LocalDateTime read(JsonReader reader) throws IOException {
+            if (reader.peek() == com.google.gson.stream.JsonToken.NULL) {
+                reader.nextNull();
                 return null;
             }
-            String dateString = in.nextString();
+            String dateString = reader.nextString();
             return LocalDateTime.parse(dateString, formatter);
         }
     }
