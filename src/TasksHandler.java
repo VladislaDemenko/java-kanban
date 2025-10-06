@@ -43,7 +43,7 @@ public class TasksHandler extends BaseHttpHandler implements HttpHandler {
 
     private void handleGet(HttpExchange exchange, String path) throws IOException {
         if (path.equals("/tasks")) {
-            // Получить все задачи
+
             var tasks = taskManager.getTasks();
             System.out.println("Found " + tasks.size() + " tasks");
             String response = gson.toJson(tasks);
